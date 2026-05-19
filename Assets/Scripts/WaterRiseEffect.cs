@@ -1,4 +1,5 @@
 using UnityEngine;
+using DG.Tweening;
 
 public class WaterRiseEffect : MonoBehaviour
 {
@@ -7,10 +8,14 @@ public class WaterRiseEffect : MonoBehaviour
     [SerializeField] private float riseStartTime = 60f; // 1 dakika sonra başla
     [SerializeField] private float initialWaterHeight = 7.227219f;
     [SerializeField] private float finalWaterHeight = 9f;
+    [SerializeField] private GameObject[] wetCapsules;
+    [SerializeField] private float wetCapsuleDropDistance = 0.2f; // Aşağı inme mesafesi
+    [SerializeField] private float wetCapsuleAnimDuration = 10f; // 10 saniyede aşağı git
     
     private float elapsedTime = 0f;
     private Vector3 initialPosition;
     private bool isRising = false;
+    private bool wetCapsulesAnimated = false;
 
     private void Start()
     {
@@ -52,6 +57,13 @@ public class WaterRiseEffect : MonoBehaviour
         if (elapsedTime >= riseStartTime)
         {
             isRising = true;
+            
+            // Wet Capsule animasyonunu başlat (sadece bir kez)
+            if (!wetCapsulesAnimated)
+            {
+                AnimateWetCapsules();
+                wetCapsulesAnimated = true;
+            }
             
             // Kalan süreyü hesapla (60 saniye kaldı)
             float riseElapsedTime = elapsedTime - riseStartTime;
@@ -99,6 +111,37 @@ public class WaterRiseEffect : MonoBehaviour
         }
     }
 
+    // Wet Capsule'ları DOTween ile aşağı doğru hareket ettir
+    private void AnimateWetCapsules()
+    {
+        if (wetCapsules == null || wetCapsules.Length == 0)
+        {
+            Debug.LogWarning("Wet Capsule'lar atanmamış!");
+            return;
+        }
+
+        foreach (GameObject capsule in wetCapsules)
+        {
+            if (capsule != null)
+            {
+                // Mevcut pozisyonunu al
+                Vector3 startPos = capsule.transform.position;
+                // Hedef pozisyonu hesapla (Y ekseninde -0.2 birim)
+                Vector3 endPos = startPos + Vector3.down * wetCapsuleDropDistance;
+                
+                // DOTween animasyonu: 10 saniyede aşağı git
+                capsule.transform.DOMove(endPos, wetCapsuleAnimDuration)
+                    .SetEase(Ease.InOutQuad)
+                    .OnComplete(() => 
+                    {
+                        Debug.Log($"Wet Capsule '{capsule.name}' hareketi tamamlandı!");
+                    });
+
+                Debug.Log($"Wet Capsule '{capsule.name}' aşağı doğru hareket etmeye başladı!");
+            }
+        }
+    }
+
     // İsteğe bağlı: Su yüksekliğini manuel olarak ayarla
     public void SetWaterHeight(float height)
     {
@@ -118,6 +161,8 @@ public class WaterRiseEffect : MonoBehaviour
     {
         elapsedTime = 0f;
         isRising = false;
+        wetCapsulesAnimated = false;
+        
         foreach (Transform water in waterTransforms)
         {
             if (water != null)
@@ -127,6 +172,18 @@ public class WaterRiseEffect : MonoBehaviour
                 water.position = newPos;
             }
         }
+        
+        // Wet Capsule'ları eski konumlarına geri al
+        foreach (GameObject capsule in wetCapsules)
+        {
+            if (capsule != null)
+            {
+                capsule.transform.DOKill(); // Devam eden tüm DOTween animasyonlarını durdur
+                Vector3 originalPos = capsule.transform.position + Vector3.up * wetCapsuleDropDistance;
+                capsule.transform.position = originalPos;
+            }
+        }
+        
         Debug.Log("Su süreci sıfırlandı!");
     }
 }
