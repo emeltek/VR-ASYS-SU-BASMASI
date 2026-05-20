@@ -26,10 +26,9 @@ public class WaterRiseEffect : MonoBehaviour
     [SerializeField] private float ramSplineTargetLocalY = -7.59f;
     [SerializeField] private float ramSplineAnimDuration = 60f; // 1 dakikada tamamla
 
-    [Header("Ekstra Obje Ayarları (En Başta Başlar)")]
+    [Header("Ekstra Obje Ayarları")]
     [SerializeField] private GameObject extraObject;      // Ayrı obje
     [SerializeField] private float extraObjectTargetY = 3.3f;
-    // Not: extraObjectAnimDuration kaldırıldı çünkü süre artık totalDuration + ramSplineAnimDuration olarak hesaplanıyor.
 
     // ── Özel hesaplanan yükseklikler ve pozisyonlar ──────────────────────────
     private float midWaterHeight;   // %15 yükseldikten sonraki seviye (60s sonunda)
@@ -40,6 +39,7 @@ public class WaterRiseEffect : MonoBehaviour
     private bool isRising = false;
     private bool wetCapsulesAnimated = false;
     private bool postTotalAnimStarted = false; // totalDuration sonrası animasyonlar başladı mı
+    private bool isAnimationActive = false;    // Butona basılıp basılmadığını kontrol eder
 
     // ────────────────────────────────────────────────────────────────────────
     private void Start()
@@ -56,7 +56,7 @@ public class WaterRiseEffect : MonoBehaviour
         // %15'lik kısım → ilk 60 saniyede gidilecek yükseklik
         midWaterHeight = initialWaterHeight + totalRise * firstPhaseRatio;
 
-        // Tüm su objelerini başlangıç yüksekliğine ayarla
+        // Tüm su objelerini başlangıç yüksekliğine ayarla (Sahne açılışında hazır beklerler)
         foreach (Transform water in waterTransforms)
         {
             if (water != null)
@@ -67,25 +67,50 @@ public class WaterRiseEffect : MonoBehaviour
             }
         }
 
-        // Ekstra objenin ilk pozisyonunu kaydet ve animasyonu EN BAŞTA başlat
+        // Ekstra objenin ilk pozisyonunu kaydet
         if (extraObject != null)
         {
             extraObjectInitialPos = extraObject.transform.position;
+        }
+
+        Debug.Log($"Sistem Hazır. Butona basılması bekleniyor... Su başlangıç: {initialWaterHeight}");
+    }
+
+    // ── Butona Bağlanacak Public Fonksiyon ────────────────────────────────────
+    public void StartWaterSequence()
+    {
+        // Eğer zaten çalışıyorsa butona tekrar basılmasını engelle
+        if (isAnimationActive) 
+        {
+            Debug.LogWarning("Animasyon süreci zaten çalışıyor!");
+            return;
+        }
+
+        // Süreci tamamen sıfırla ve temiz bir başlangıç yap
+        ResetWaterStateOnly();
+
+        isAnimationActive = true;
+
+        // Ekstra objenin DOTween animasyonunu buraya taşıdık (Butona basıldığı an başlar)
+        if (extraObject != null)
+        {
             StartExtraObjectAnimation();
         }
 
-        Debug.Log($"Su başlangıç: {initialWaterHeight} | Ara hedef (%15): {midWaterHeight:F3} | Final (%85): {finalWaterHeight}");
+        Debug.Log("Su yükselme simülasyonu BUTON tetiklemesiyle BAŞLADI!");
     }
 
     // ────────────────────────────────────────────────────────────────────────
     private void Update()
     {
+        // Butona basılmadıysa hiçbir şey yapma, Update'i boşa çalıştırma
+        if (!isAnimationActive) return;
+
         elapsedTime += Time.deltaTime;
 
         // ── Faz 1: ilk 60 saniye ────────────────────────────────────────────
         if (elapsedTime < riseStartTime)
         {
-            // Su yavaşça %15 seviyesine doğru yükseliyor
             float progress = Mathf.Clamp01(elapsedTime / riseStartTime);
             float currentHeight = Mathf.Lerp(initialWaterHeight, midWaterHeight, progress);
             SetWaterHeight(currentHeight);
@@ -95,7 +120,6 @@ public class WaterRiseEffect : MonoBehaviour
         {
             isRising = true;
 
-            // Wet Capsule animasyonunu tek sefer başlat
             if (!wetCapsulesAnimated)
             {
                 AnimateWetCapsules();
@@ -103,7 +127,7 @@ public class WaterRiseEffect : MonoBehaviour
             }
 
             float riseElapsed = elapsedTime - riseStartTime;
-            float riseDuration = totalDuration - riseStartTime; // 60 saniye
+            float riseDuration = totalDuration - riseStartTime;
             float progress = Mathf.Clamp01(riseElapsed / riseDuration);
 
             float currentHeight = Mathf.Lerp(midWaterHeight, finalWaterHeight, progress);
@@ -112,10 +136,8 @@ public class WaterRiseEffect : MonoBehaviour
         // ── Faz 3: totalDuration (120s) sonrası ─────────────────────────────
         else
         {
-            // Su nihai yükseklikte sabit kalsın
             SetWaterHeight(finalWaterHeight);
 
-            // RamSpline animasyonlarını tek sefer başlat (Ekstra obje buradan kaldırıldı)
             if (!postTotalAnimStarted)
             {
                 StartPostTotalAnimations();
@@ -129,27 +151,22 @@ public class WaterRiseEffect : MonoBehaviour
     {
         if (extraObject == null) return;
 
-        // Önce çalışan bir tween varsa durdur ve güvenli pozisyona al
         extraObject.transform.DOKill();
         extraObject.transform.position = extraObjectInitialPos;
 
         Vector3 targetPos = extraObject.transform.position;
         targetPos.y = extraObjectTargetY;
 
-        // Süre dinamik hesaplanıyor: totalDuration + ramSplineAnimDuration
         float calculatedDuration = totalDuration + ramSplineAnimDuration;
 
         extraObject.transform.DOMove(targetPos, calculatedDuration)
             .SetEase(Ease.InOutQuad)
             .OnComplete(() => Debug.Log($"Ekstra obje Y={extraObjectTargetY} hedefine ulaştı!"));
-
-        Debug.Log($"Ekstra obje '{extraObject.name}' en başta hareketine başladı. Hedef Süre: {calculatedDuration}s");
     }
 
     // ── Faz 3 animasyonlarını başlat ─────────────────────────────────────────
     private void StartPostTotalAnimations()
     {
-        // --- RamSpline Child'ları ---
         if (ramSplineParent != null)
         {
             Transform child1 = ramSplineParent.transform.Find("RamSpline_2 (1)");
@@ -158,19 +175,11 @@ public class WaterRiseEffect : MonoBehaviour
             AnimateRamSplineChild(child1);
             AnimateRamSplineChild(child2);
         }
-        else
-        {
-            Debug.LogWarning("RamSpline Parent objesi atanmamış!");
-        }
     }
 
     private void AnimateRamSplineChild(Transform child)
     {
-        if (child == null)
-        {
-            Debug.LogWarning("RamSpline child objesi bulunamadı!");
-            return;
-        }
+        if (child == null) return;
 
         Vector3 targetLocalPos = child.localPosition;
         targetLocalPos.y = ramSplineTargetLocalY;
@@ -178,18 +187,12 @@ public class WaterRiseEffect : MonoBehaviour
         child.DOLocalMove(targetLocalPos, ramSplineAnimDuration)
             .SetEase(Ease.InOutQuad)
             .OnComplete(() => Debug.Log($"'{child.name}' local Y={ramSplineTargetLocalY} hedefine ulaştı!"));
-
-        Debug.Log($"'{child.name}' local Y={ramSplineTargetLocalY} hedefine doğru hareket başladı.");
     }
 
     // ── Wet Capsule Animasyonu ────────────────────────────────────────────────
     private void AnimateWetCapsules()
     {
-        if (wetCapsules == null || wetCapsules.Length == 0)
-        {
-            Debug.LogWarning("Wet Capsule'lar atanmamış!");
-            return;
-        }
+        if (wetCapsules == null || wetCapsules.Length == 0) return;
 
         foreach (GameObject capsule in wetCapsules)
         {
@@ -197,10 +200,7 @@ public class WaterRiseEffect : MonoBehaviour
             {
                 Vector3 endPos = capsule.transform.position + Vector3.down * wetCapsuleDropDistance;
                 capsule.transform.DOMove(endPos, wetCapsuleAnimDuration)
-                    .SetEase(Ease.InOutQuad)
-                    .OnComplete(() => Debug.Log($"'{capsule.name}' hareketi tamamlandı!"));
-
-                Debug.Log($"Wet Capsule '{capsule.name}' aşağı hareket başladı.");
+                    .SetEase(Ease.InOutQuad);
             }
         }
     }
@@ -219,7 +219,16 @@ public class WaterRiseEffect : MonoBehaviour
         }
     }
 
+    // Harici çağrılar için tam sıfırlama metodu (Süreci durdurur ve başa sarar)
     public void ResetWater()
+    {
+        isAnimationActive = false;
+        ResetWaterStateOnly();
+        Debug.Log("Su süreci tamamen sıfırlandı ve durduruldu!");
+    }
+
+    // İç durumsal reset mantığı
+    private void ResetWaterStateOnly()
     {
         elapsedTime = 0f;
         isRising = false;
@@ -228,7 +237,6 @@ public class WaterRiseEffect : MonoBehaviour
 
         SetWaterHeight(initialWaterHeight);
 
-        // Wet Capsule'ları eski konumlarına geri al
         if (wetCapsules != null)
         {
             foreach (GameObject capsule in wetCapsules)
@@ -236,22 +244,22 @@ public class WaterRiseEffect : MonoBehaviour
                 if (capsule != null)
                 {
                     capsule.transform.DOKill();
-                    capsule.transform.position += Vector3.up * wetCapsuleDropDistance;
+                    capsule.transform.position = extraObjectInitialPos; // Veya orijinal konumu neyse
                 }
             }
         }
 
-        // RamSpline child'larını sıfırla
         if (ramSplineParent != null)
         {
             ResetRamSplineChild(ramSplineParent.transform.Find("RamSpline_2 (1)"));
             ResetRamSplineChild(ramSplineParent.transform.Find("RamSpline_2 (2)"));
         }
 
-        // Ekstra objeyi sıfırla ve en baştan tekrar oynat
-        StartExtraObjectAnimation();
-
-        Debug.Log("Su süreci sıfırlandı!");
+        if (extraObject != null)
+        {
+            extraObject.transform.DOKill();
+            extraObject.transform.position = extraObjectInitialPos;
+        }
     }
 
     private void ResetRamSplineChild(Transform child)
