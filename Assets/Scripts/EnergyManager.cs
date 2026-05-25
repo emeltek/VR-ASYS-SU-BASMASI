@@ -1,14 +1,17 @@
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class EnergyManager : MonoBehaviour
 {
     public SwitchState[] switches;
    public GameObject electricEffect;
     public AudioSource audioSource;
-    [SerializeField] private GameObject colliderobject; 
+    public AudioClip switchOffSuccess;
+    public AudioClip switchWrongBehaviour;
+    public GameObject waterTerrain;
 
 
-    private bool wasAllOff = false; // önceki durumu takip et
+    private bool wasAllOff = true; // önceki durumu takip et
 
     void Update()
     {
@@ -23,13 +26,23 @@ public class EnergyManager : MonoBehaviour
             }
         }
 
-        electricEffect.SetActive(!allOff);
+        
 
         // Sadece durum değiştiğinde çal
         if (allOff && !wasAllOff)
         {
-            audioSource.Play();
-            colliderobject.SetActive(false);
+            if (waterTerrain.transform.position.y > -7.8f)
+            {
+                audioSource.PlayOneShot(switchWrongBehaviour);
+            }
+            else
+            {
+                audioSource.PlayOneShot(switchOffSuccess);
+            }
+         
+
+           
+           
         }
 
         wasAllOff = allOff;

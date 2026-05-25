@@ -34,6 +34,12 @@ public class WaterRiseEffect : MonoBehaviour
     private float midWaterHeight;   // %15 yükseldikten sonraki seviye (60s sonunda)
     private Vector3 extraObjectInitialPos; // Reset için ekstra objenin ilk konumu
 
+    // ── RamSpline Orijinal Konum Değişkenleri (YENİ) ─────────────────────────
+    private Vector3 child1InitialLocalPos;
+    private Vector3 child2InitialLocalPos;
+    private Transform child1;
+    private Transform child2;
+
     // ── İç durum ─────────────────────────────────────────────────────────────
     private float elapsedTime = 0f;
     private bool isRising = false;
@@ -73,13 +79,22 @@ public class WaterRiseEffect : MonoBehaviour
             extraObjectInitialPos = extraObject.transform.position;
         }
 
+        // RamSpline child referanslarını ve mevcut (başlangıç) konumlarını kaydet (YENİ)
+        if (ramSplineParent != null)
+        {
+            child1 = ramSplineParent.transform.Find("RamSpline_2 (1)");
+            child2 = ramSplineParent.transform.Find("RamSpline_2 (2)");
+
+            if (child1 != null) child1InitialLocalPos = child1.localPosition;
+            if (child2 != null) child2InitialLocalPos = child2.localPosition;
+        }
+
         Debug.Log($"Sistem Hazır. Butona basılması bekleniyor... Su başlangıç: {initialWaterHeight}");
     }
 
     // ── Butona Bağlanacak Public Fonksiyon ────────────────────────────────────
     public void StartWaterSequence()
     {
-        // Eğer zaten çalışıyorsa butona tekrar basılmasını engelle
         if (isAnimationActive) 
         {
             Debug.LogWarning("Animasyon süreci zaten çalışıyor!");
@@ -91,7 +106,6 @@ public class WaterRiseEffect : MonoBehaviour
 
         isAnimationActive = true;
 
-        // Ekstra objenin DOTween animasyonunu buraya taşıdık (Butona basıldığı an başlar)
         if (extraObject != null)
         {
             StartExtraObjectAnimation();
@@ -103,7 +117,6 @@ public class WaterRiseEffect : MonoBehaviour
     // ────────────────────────────────────────────────────────────────────────
     private void Update()
     {
-        // Butona basılmadıysa hiçbir şey yapma, Update'i boşa çalıştırma
         if (!isAnimationActive) return;
 
         elapsedTime += Time.deltaTime;
@@ -167,21 +180,19 @@ public class WaterRiseEffect : MonoBehaviour
     // ── Faz 3 animasyonlarını başlat ─────────────────────────────────────────
     private void StartPostTotalAnimations()
     {
-        if (ramSplineParent != null)
-        {
-            Transform child1 = ramSplineParent.transform.Find("RamSpline_2 (1)");
-            Transform child2 = ramSplineParent.transform.Find("RamSpline_2 (2)");
-
-            AnimateRamSplineChild(child1);
-            AnimateRamSplineChild(child2);
-        }
+        // Artık sıfırdan değil, bulundukları mevcut local konumlardan hedefe doğru tween yapacaklar
+        AnimateRamSplineChild(child1);
+        AnimateRamSplineChild(child2);
     }
 
     private void AnimateRamSplineChild(Transform child)
     {
         if (child == null) return;
 
-        Vector3 targetLocalPos = child.localPosition;
+        child.DOKill(); // Eğer üzerinde çalışan eski bir tween varsa durdur
+
+        // Mevcut x ve z koordinatlarını koruyarak sadece hedef Local Y'yi değiştiriyoruz
+        Vector3 targetLocalPos = child.localPosition; 
         targetLocalPos.y = ramSplineTargetLocalY;
 
         child.DOLocalMove(targetLocalPos, ramSplineAnimDuration)
@@ -219,7 +230,6 @@ public class WaterRiseEffect : MonoBehaviour
         }
     }
 
-    // Harici çağrılar için tam sıfırlama metodu (Süreci durdurur ve başa sarar)
     public void ResetWater()
     {
         isAnimationActive = false;
@@ -227,7 +237,6 @@ public class WaterRiseEffect : MonoBehaviour
         Debug.Log("Su süreci tamamen sıfırlandı ve durduruldu!");
     }
 
-    // İç durumsal reset mantığı
     private void ResetWaterStateOnly()
     {
         elapsedTime = 0f;
@@ -244,16 +253,14 @@ public class WaterRiseEffect : MonoBehaviour
                 if (capsule != null)
                 {
                     capsule.transform.DOKill();
-                    capsule.transform.position = extraObjectInitialPos; // Veya orijinal konumu neyse
+                    // Not: Kapsüllerin kendi orijinal pozisyon reset mantığını projenize göre buraya kurabilirsiniz.
                 }
             }
         }
 
-        if (ramSplineParent != null)
-        {
-            ResetRamSplineChild(ramSplineParent.transform.Find("RamSpline_2 (1)"));
-            ResetRamSplineChild(ramSplineParent.transform.Find("RamSpline_2 (2)"));
-        }
+        // Objeleri 0'a değil, Start fonksiyonunda kaydettiğimiz kendi orijinal konumlarına sıfırlıyoruz (YENİ)
+        ResetRamSplineChild(child1, child1InitialLocalPos);
+        ResetRamSplineChild(child2, child2InitialLocalPos);
 
         if (extraObject != null)
         {
@@ -262,12 +269,11 @@ public class WaterRiseEffect : MonoBehaviour
         }
     }
 
-    private void ResetRamSplineChild(Transform child)
+    // Reset fonksiyonunu orijinal pozisyonu parametre alacak şekilde güncelledik (YENİ)
+    private void ResetRamSplineChild(Transform child, Vector3 initialLocalPos)
     {
         if (child == null) return;
         child.DOKill();
-        Vector3 localPos = child.localPosition;
-        localPos.y = 0f; 
-        child.localPosition = localPos;
+        child.localPosition = initialLocalPos;
     }
 }
