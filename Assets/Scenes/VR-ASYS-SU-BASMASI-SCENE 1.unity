@@ -172620,9 +172620,9 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
-      - m_Target: {fileID: 0}
-        m_TargetAssemblyTypeName: SafeAreaController, Assembly-CSharp
-        m_MethodName: isLandSlideActive
+      - m_Target: {fileID: 1250259992}
+        m_TargetAssemblyTypeName: GrabbleController, Assembly-CSharp
+        m_MethodName: EnableBoxCollider
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
