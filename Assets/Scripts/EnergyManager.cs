@@ -31,7 +31,7 @@ public class EnergyManager : MonoBehaviour
         // Sadece durum değiştiğinde çal
         if (allOff && !wasAllOff)
         {
-            if (waterTerrain.transform.position.y > -7.8f)
+            if (waterTerrain.transform.localPosition.y > -7.8f)
             {
                 audioSource.PlayOneShot(switchWrongBehaviour);
             }

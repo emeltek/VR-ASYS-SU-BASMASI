@@ -48,8 +48,15 @@ public class WaterRiseEffect : MonoBehaviour
     private bool isAnimationActive = false;    // Butona basılıp basılmadığını kontrol eder
 
     // ────────────────────────────────────────────────────────────────────────
+
+    public static bool isRainStarted = false;
+    public static bool isWaterMaxHight = false;
+    public FirstFloorController firstFloorController;
+    public GameObject secondUI;
+    public AudioSource ramSplineAudioSource;
     private void Start()
     {
+        secondUI.SetActive(false);
         if (waterTransforms == null || waterTransforms.Length == 0)
         {
             Debug.LogError("Water Transform'ları atanmamış!");
@@ -95,6 +102,7 @@ public class WaterRiseEffect : MonoBehaviour
     // ── Butona Bağlanacak Public Fonksiyon ────────────────────────────────────
     public void StartWaterSequence()
     {
+        isRainStarted = true;
         if (isAnimationActive) 
         {
             Debug.LogWarning("Animasyon süreci zaten çalışıyor!");
@@ -189,15 +197,33 @@ public class WaterRiseEffect : MonoBehaviour
     {
         if (child == null) return;
 
-        child.DOKill(); // Eğer üzerinde çalışan eski bir tween varsa durdur
+        child.DOKill(); 
 
-        // Mevcut x ve z koordinatlarını koruyarak sadece hedef Local Y'yi değiştiriyoruz
         Vector3 targetLocalPos = child.localPosition; 
         targetLocalPos.y = ramSplineTargetLocalY;
 
         child.DOLocalMove(targetLocalPos, ramSplineAnimDuration)
             .SetEase(Ease.InOutQuad)
-            .OnComplete(() => Debug.Log($"'{child.name}' local Y={ramSplineTargetLocalY} hedefine ulaştı!"));
+            .OnComplete(() => {
+                firstFloorController.FirstFloorCheck();
+                isWaterMaxHight = true;
+                secondUI.SetActive(true);
+                Debug.Log($"'{child.name}' local Y={ramSplineTargetLocalY} hedefine ulaştı!");
+
+                // ── YENİ: OnComplete olduktan sonra 10 saniye sayar ve sesi çalar
+                // Çift ses çalmasını engellemek için sadece ilk tamamlanan child üzerinden kontrol sağlıyoruz
+                if (child.name == "RamSpline_2 (1)" && ramSplineAudioSource != null)
+                {
+                    DOVirtual.DelayedCall(10f, () => 
+                    {
+                        if (ramSplineAudioSource != null && !ramSplineAudioSource.isPlaying)
+                        {
+                            ramSplineAudioSource.Play();
+                            Debug.Log("Animasyon bittikten 10 saniye geçti, ses çalınıyor.");
+                        }
+                    });
+                }
+            });
     }
 
     // ── Wet Capsule Animasyonu ────────────────────────────────────────────────
