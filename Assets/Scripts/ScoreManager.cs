@@ -8,6 +8,9 @@ public class ScoreManager : MonoBehaviour
     public static ScoreManager Instance;
     public static float score = 0f;
 
+    private const float MIN_SCORE = 0f;
+    private const float MAX_SCORE = 100f;
+
     [SerializeField] private TextMeshProUGUI scoreText;
 
     private void Awake()
@@ -17,18 +20,18 @@ public class ScoreManager : MonoBehaviour
 
     public void AddScore(float value)
     {
-        score += value;
+        score = Mathf.Clamp(score + value, MIN_SCORE, MAX_SCORE);
         Debug.Log("Puan eklendi: " + value + " | Toplam: " + score);
     }
 
     public void SubtractScore(float value)
     {
-        score -= value;
+        score = Mathf.Clamp(score - value, MIN_SCORE, MAX_SCORE);
         Debug.Log("Puan düşüldü: " + value + " | Toplam: " + score);
     }
 
     public void ShowFinalScore()
     {
-        scoreText.text = "Toplam Puanınız: " + score.ToString("F0");
+        scoreText.text = "Toplam Puanınız: " + score.ToString("F0") + " / 100";
     }
 }
