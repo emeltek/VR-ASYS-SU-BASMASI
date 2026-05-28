@@ -9,6 +9,7 @@ public class SafeAreaController : MonoBehaviour
     public AudioSource upperfloorSuccess;
     private bool isAudioTriggered;
     public static bool isinSafeAreaController = false;
+    public bool isExamScene = false;
     private void OnTriggerEnter(Collider other)
     {
         if (other.CompareTag("Player") && WaterRiseEffect.isRainStarted == true)
@@ -16,9 +17,17 @@ public class SafeAreaController : MonoBehaviour
             if (!isAudioTriggered)
             {
                 tracker.SetSafeAreaStatus(true);
-                upperfloorSuccess.Play();
                 isAudioTriggered = true;
                 isinSafeAreaController = true;
+                if (isExamScene == false)
+                {
+                    upperfloorSuccess.Play();
+
+                }
+                else
+                {
+                    ScoreManager.Instance.AddScore(20f);
+                }
 
             }
         }

@@ -21,6 +21,7 @@ public class VRMovementTracker : MonoBehaviour
     private Vector3 lastPosition;
     private float immobileTimer = 0f;
     private bool isAudioTriggered = false;
+    public bool isExamScene = false;
 
     void Start()
     {
@@ -84,7 +85,15 @@ public class VRMovementTracker : MonoBehaviour
             {
                 if (SafeAreaController.isinSafeAreaController == false)
                 {
-                    WarningAudioSource.Play();
+                    if (isExamScene == false)
+                    {
+                        WarningAudioSource.Play();
+
+                    }
+                    else
+                    {
+                        ScoreManager.Instance.SubtractScore(5f);
+                    }
                     isAudioTriggered = true;
                     
                     Debug.Log("Oyuncu 15 saniyedir safe area dışında ve hareketsiz! Ses çalınıyor.");

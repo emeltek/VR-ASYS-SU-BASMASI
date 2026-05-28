@@ -9,7 +9,8 @@ public class EnergyManager : MonoBehaviour
     public AudioClip switchOffSuccess;
     public AudioClip switchWrongBehaviour;
     public GameObject waterTerrain;
-
+    public bool isExamScene = false;
+    public ScoreManager scoreManager;
 
     private bool wasAllOff = true; // önceki durumu takip et
 
@@ -33,11 +34,21 @@ public class EnergyManager : MonoBehaviour
         {
             if (waterTerrain.transform.localPosition.y > -7.8f)
             {
-                audioSource.PlayOneShot(switchWrongBehaviour);
+                if (isExamScene == false)
+                {
+                    audioSource.PlayOneShot(switchWrongBehaviour);
+
+                }
+                ScoreManager.Instance.SubtractScore(20f);
             }
             else
             {
-                audioSource.PlayOneShot(switchOffSuccess);
+                if (isExamScene == false)
+                {
+                    audioSource.PlayOneShot(switchOffSuccess);
+
+                }
+                ScoreManager.Instance.AddScore(20f);
             }
          
 

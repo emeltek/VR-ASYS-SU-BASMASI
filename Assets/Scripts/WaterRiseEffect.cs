@@ -54,6 +54,8 @@ public class WaterRiseEffect : MonoBehaviour
     public FirstFloorController firstFloorController;
     public GameObject secondUI;
     public AudioSource ramSplineAudioSource;
+    public bool isExamScene = false;
+    public GameObject scoreUI;
     private void Start()
     {
         secondUI.SetActive(false);
@@ -218,7 +220,16 @@ public class WaterRiseEffect : MonoBehaviour
                     {
                         if (ramSplineAudioSource != null && !ramSplineAudioSource.isPlaying)
                         {
-                            ramSplineAudioSource.Play();
+                            if (isExamScene == false)
+                            {
+                                ramSplineAudioSource.Play();
+
+                            }
+                            else
+                            {
+                                ScoreManager.Instance.ShowFinalScore();
+                                scoreUI.SetActive(true);
+                            }
                             Debug.Log("Animasyon bittikten 10 saniye geçti, ses çalınıyor.");
                         }
                     });

@@ -7,6 +7,7 @@ public class FirstFloorController : MonoBehaviour
 {
     public static bool isCharacterEntered;
     public AudioSource firstFloorAudio;
+    public bool isExamScene = false;
     
     private void OnTriggerEnter(Collider other)
     {
@@ -29,7 +30,16 @@ public class FirstFloorController : MonoBehaviour
     {
         if (isCharacterEntered)
         {
-            firstFloorAudio.Play();
+            if (isExamScene == true)
+            {
+                ScoreManager.Instance.SubtractScore(20f);
+            }
+
+            if (isExamScene == false)
+            {
+                firstFloorAudio.Play();
+
+            }
 
         }
     }

@@ -5,6 +5,7 @@ using UnityEngine;
 public class FirstAidKitController : MonoBehaviour
 {
     public GameObject kit;
+    public bool isExamScene = false;
 
     private void OnTriggerEnter(Collider other)
     {
@@ -14,6 +15,10 @@ public class FirstAidKitController : MonoBehaviour
             if ( WaterRiseEffect.isRainStarted == true)
             {
                 kit.SetActive(false);
+                if (isExamScene == false)
+                {
+                    ScoreManager.Instance.AddScore(10f);
+                }
             }
             
         }
