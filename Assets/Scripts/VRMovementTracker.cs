@@ -82,9 +82,14 @@ public class VRMovementTracker : MonoBehaviour
             }
             else
             {
-                WarningAudioSource.Play();
-                isAudioTriggered = true;
-                Debug.Log("Oyuncu 15 saniyedir safe area dışında ve hareketsiz! Ses çalınıyor.");
+                if (SafeAreaController.isinSafeAreaController == false)
+                {
+                    WarningAudioSource.Play();
+                    isAudioTriggered = true;
+                    
+                    Debug.Log("Oyuncu 15 saniyedir safe area dışında ve hareketsiz! Ses çalınıyor.");
+                }
+               
             }
       
         }
