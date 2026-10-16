@@ -13,6 +13,7 @@ public class EnergyManager : MonoBehaviour
     public ScoreManager scoreManager;
 
     private bool wasAllOff = true; // önceki durumu takip et
+    private bool scored = false;   // şalter puanı bir kere verilsin
 
     void Update()
     {
@@ -27,33 +28,24 @@ public class EnergyManager : MonoBehaviour
             }
         }
 
-        
-
         // Sadece durum değiştiğinde çal
         if (allOff && !wasAllOff)
         {
-            if (waterTerrain.transform.localPosition.y > -7.8f)
+            bool waterTooHigh = waterTerrain.transform.localPosition.y > -7.8f;
+
+            if (isExamScene == false)
             {
-                if (isExamScene == false)
-                {
-                    audioSource.PlayOneShot(switchWrongBehaviour);
-
-                }
-                ScoreManager.Instance.SubtractScore(20f);
+                audioSource.PlayOneShot(waterTooHigh ? switchWrongBehaviour : switchOffSuccess);
             }
-            else
+
+            if (!scored)
             {
-                if (isExamScene == false)
-                {
-                    audioSource.PlayOneShot(switchOffSuccess);
-
-                }
-                ScoreManager.Instance.AddScore(20f);
+                scored = true;
+                if (waterTooHigh)
+                    ScoreManager.Instance.SubtractScore(20f);
+                else
+                    ScoreManager.Instance.AddScore(20f);
             }
-         
-
-           
-           
         }
 
         wasAllOff = allOff;
