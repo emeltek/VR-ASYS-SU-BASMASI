@@ -9,7 +9,7 @@ Etiketler (yalnızca eğitimde, `GnnGraphBuilder.ComputeLabels`):
 
 | Yer | Kural | Sınıf |
 |---|---|---|
-| Ev içi (kat / güvenli alan kutularının birleşimi + 1 m) | Son su seviyesinin (`Flood Level`, 14.8 m) 0.5 m'den fazla altı | Tehlikeli (bodrum) |
+| Ev içi (kat / güvenli alan kutularının birleşimi + 1 m, üstü kapalı) | Son su seviyesinin (`Flood Level`, 14.8 m) 1.0 m'den fazla altı | Tehlikeli (bodrum) |
 | | Su seviyesinin en fazla 1.5 m üstü | Dikkat (zemin kat, giriş) |
 | | Daha yüksek | Güvenli (üst kat) |
 | Dışarısı | Nehir yatağı (`River Level` 11.0 m altındaki zemin) ve 3 m çevresi | Tehlikeli (nehir kenarı) |

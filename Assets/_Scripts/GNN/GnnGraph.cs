@@ -36,8 +36,8 @@ public class GnnGraphSettings
     [Tooltip("Senaryo sonundaki su seviyesi (dünya Y, m). Bodrum bunun altında, zemin kat yaklaşık bu seviyede kalır.")]
     public float floodLevel = 14.8f;
 
-    [Tooltip("Etiket: su seviyesinin bu kadar (m) altındaki düğümler 'Tehlikeli' (su derinliği)")]
-    public float dangerDepth = 0.5f;
+    [Tooltip("Etiket (ev içi): su seviyesinin bu kadar (m) altındaki düğümler 'Tehlikeli' (bodrum; giriş / sundurma değil)")]
+    public float indoorDangerDepth = 1f;
 
     [Tooltip("Etiket: su seviyesinin en fazla bu kadar (m) üstündeki düğümler 'Dikkat'; daha yükseği 'Güvenli'")]
     public float safeHeight = 1.5f;

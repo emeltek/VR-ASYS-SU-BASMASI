@@ -485,7 +485,7 @@ public sealed class GnnGraphBuilder
     /// <summary>
     /// Bir zemin noktasının etiketi. Eğitim etiketleri ve GNN hazır değilken puanlayıcının yedeği aynı kuralı kullanır.
     ///
-    /// İç mekân (ev alanı): son su seviyesinin dangerDepth'ten fazla altı → Tehlikeli (bodrum),
+    /// İç mekân (ev alanında ve üstü kapalı): su seviyesinin indoorDangerDepth'ten fazla altı → Tehlikeli (bodrum),
     ///                      en fazla safeHeight üstü → Dikkat (zemin kat, giriş), daha yükseği → Güvenli (üst kat).
     /// Dış mekân:           nehir yatağı / kenarı ya da köprü çizgisine hazardPointRadius'tan yakın → Tehlikeli,
     ///                      kalanı → Dikkat (sel sırasında dışarısı güvenli sayılmaz).
@@ -496,7 +496,7 @@ public sealed class GnnGraphBuilder
         if (indoor)
         {
             float depth = settings.floodLevel - floor.y;
-            if (depth > settings.dangerDepth) return GnnRiskClass.Danger;
+            if (depth > settings.indoorDangerDepth) return GnnRiskClass.Danger;
             return -depth <= settings.safeHeight ? GnnRiskClass.Caution : GnnRiskClass.Safe;
         }
 
@@ -518,7 +518,10 @@ public sealed class GnnGraphBuilder
     {
         int n = graph.NodeCount;
         var indoor = new bool[n];
-        for (int i = 0; i < n; i++) indoor[i] = InBuilding(graph.Positions[i], building, settings);
+        // Ev alanı kutuları duvarların dışına taşabilir: üstü açık (tavan özelliği = 1) avlu dış mekândır
+        int f = graph.FeatureCount;
+        for (int i = 0; i < n; i++)
+            indoor[i] = InBuilding(graph.Positions[i], building, settings) && graph.Features[i * f + 3] < 1f;
 
         // Nehir yatağı: ev dışında riverLevel altındaki düğümler; hücre tablosuyla çevresi aranır
         float r = settings.hazardPointRadius;

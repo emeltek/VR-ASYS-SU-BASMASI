@@ -174,7 +174,8 @@ public class GnnRiskScorer : MonoBehaviour
         GnnGraphSettings settings = predictor != null ? predictor.GraphSettings : new GnnGraphSettings();
         var hazards = predictor != null ? predictor.HazardLines() : new System.Collections.Generic.List<System.Collections.Generic.List<Vector3>>();
         Vector3 floor = position + Vector3.down * 1.5f;
-        bool indoor = predictor != null && GnnGraphBuilder.InBuilding(floor, predictor.BuildingBounds(), settings);
+        bool indoor = predictor != null && GnnGraphBuilder.InBuilding(floor, predictor.BuildingBounds(), settings)
+                      && Physics.Raycast(floor + Vector3.up * 2f, Vector3.up, settings.overheadProbeDistance, settings.layerMask, QueryTriggerInteraction.Ignore);
         bool nearRiver = !indoor && floor.y < settings.riverLevel + settings.hazardVerticalRange;
         source = $"kural, zemin y={floor.y:F1}, {(indoor ? "iç" : "dış")} mekân";
         return GnnGraphBuilder.LabelAt(floor, indoor, nearRiver, settings, hazards);
