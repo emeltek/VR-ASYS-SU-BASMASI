@@ -92,7 +92,11 @@ public class VRMovementTracker : MonoBehaviour
                     }
                     else
                     {
-                        ScoreManager.Instance.SubtractScore(5f);
+                        // Sınavda her 15 s hareketsizlikte bir uyarı cezası (en fazla 3 kez, ScoreManager)
+                        if (ScoreManager.Instance != null) ScoreManager.Instance.ImmobilityWarning();
+                        immobileTimer = 0f;
+                        Debug.Log("Oyuncu 15 saniyedir safe area dışında ve hareketsiz! Puan düşüldü.");
+                        return;
                     }
                     isAudioTriggered = true;
                     

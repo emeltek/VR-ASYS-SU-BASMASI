@@ -296765,7 +296765,7 @@ MonoBehaviour:
     initialized: 1
   startScore: 100
   minScore: 0
-  showDebugUI: 1
+  showDebugUI: 0
   drawGizmos: 1
   logZoneChanges: 1
 --- !u!23 &7224833323105509415

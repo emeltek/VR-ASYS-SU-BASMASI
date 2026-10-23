@@ -16,10 +16,7 @@ public class FirstAidKitController : MonoBehaviour
             {
                 collected = true;
                 kit.SetActive(false);
-                if (isExamScene == false)
-                {
-                    ScoreManager.Instance.AddScore(10f);
-                }
+                if (ScoreManager.Instance != null) ScoreManager.Instance.MarkFirstAidTaken();
             }
             
         }

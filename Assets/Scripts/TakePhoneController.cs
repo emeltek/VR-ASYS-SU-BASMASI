@@ -8,21 +8,21 @@ public class TakePhoneController : MonoBehaviour
     public AudioSource takePhone;
     public GameObject phone;
     public bool isExamScene = false;
+    private bool collected = false;
 
     private void OnTriggerEnter(Collider other)
     {
+        if (collected) return;
 
         if (other.CompareTag("Player") && WaterRiseEffect.isRainStarted == true)
         {
+            collected = true;
             if (isExamScene == false)
             {
                 takePhone.Play();
 
             }
-            else
-            {
-                ScoreManager.Instance.AddScore(20f);
-            }
+            if (ScoreManager.Instance != null) ScoreManager.Instance.MarkPhoneTaken();
             phone.SetActive(false);
         }
     }

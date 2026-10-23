@@ -18,10 +18,10 @@ public class InWaterTriggerController : MonoBehaviour
 
          }
 
-         if (isExamScene == true)
+         // Sınavda yalnızca ilk temas cezalandırılır; suda kalma GNN tehlikeli alan cezasıyla ölçülür
+         if (isExamScene == true && ScoreManager.Instance != null)
          {
-            ScoreManager.Instance.SubtractScore(25f);
-            
+            ScoreManager.Instance.WaterContact();
          }
       }
    }

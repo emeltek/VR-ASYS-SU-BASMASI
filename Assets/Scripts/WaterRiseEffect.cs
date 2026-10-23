@@ -228,7 +228,7 @@ public class WaterRiseEffect : MonoBehaviour
                             else
                             {
                                 ScoreManager.Instance.ShowFinalScore();
-                                scoreUI.SetActive(true);
+                                if (scoreUI != null) scoreUI.SetActive(true);
                             }
                             Debug.Log("Animasyon bittikten 10 saniye geçti, ses çalınıyor.");
                         }

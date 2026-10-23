@@ -26,21 +26,20 @@ public class FirstFloorController : MonoBehaviour
         }
     }
 
+    private bool checkedOnce;
+
+    /// <summary>
+    /// Su en yüksek seviyeye ulaşınca çağrılır (WaterRiseEffect, iki su parçası için iki kez çağırabilir).
+    /// Eğitimde uyarı sesi çalar. Sınavda konum cezası senaryo sonunda GNN'den gelir (GnnRiskScorer).
+    /// </summary>
     public void FirstFloorCheck()
     {
-        if (isCharacterEntered)
+        if (checkedOnce) return;
+        checkedOnce = true;
+
+        if (isCharacterEntered && isExamScene == false && firstFloorAudio != null)
         {
-            if (isExamScene == true)
-            {
-                ScoreManager.Instance.SubtractScore(20f);
-            }
-
-            if (isExamScene == false)
-            {
-                firstFloorAudio.Play();
-
-            }
-
+            firstFloorAudio.Play();
         }
     }
     

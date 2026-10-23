@@ -38,13 +38,11 @@ public class EnergyManager : MonoBehaviour
                 audioSource.PlayOneShot(waterTooHigh ? switchWrongBehaviour : switchOffSuccess);
             }
 
-            if (!scored)
+            // Yalnızca senaryo başladıktan sonraki ilk kapatma değerlendirilir
+            if (!scored && WaterRiseEffect.isRainStarted && ScoreManager.Instance != null)
             {
                 scored = true;
-                if (waterTooHigh)
-                    ScoreManager.Instance.SubtractScore(20f);
-                else
-                    ScoreManager.Instance.AddScore(20f);
+                ScoreManager.Instance.MarkSwitchOff(waterTooHigh);
             }
         }
 
