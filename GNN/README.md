@@ -32,7 +32,7 @@ Etiketler (yalnızca eğitimde, `GnnGraphBuilder.ComputeLabels`):
 | Sel suyuna temas | Bir kez −20 |
 | Güvenli alan dışında hareketsiz (her 15 s) | −5, en fazla −15 |
 
-Görev ve konum cezaları senaryo sonunda (su en yüksek seviyeye ulaştıktan ~10 s sonra) uygulanır.
+Su toplam 90 s'de en yüksek seviyeye ulaşır (Total Duration 55 s + Ram Spline 35 s). Görev ve konum cezaları ~10 s sonra (100. saniye) uygulanır; şalter ~78. saniyeden sonra "ıslak" sayılır.
 Etiket: 75+ Güvenli, 50–74 Orta Riskli, 25–49 Riskli, 25 altı Yüksek Riskli.
 
 | Durum | Puan | Etiket |

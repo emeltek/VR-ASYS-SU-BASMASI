@@ -131170,8 +131170,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   waterTransforms:
   - {fileID: 22590775}
-  totalDuration: 100
-  riseStartTime: 50
+  totalDuration: 55
+  riseStartTime: 28
   initialWaterHeight: 7.2
   finalWaterHeight: 10
   firstPhaseRatio: 0.15
@@ -131181,7 +131181,7 @@ MonoBehaviour:
   wetCapsuleAnimDuration: 10
   ramSplineParent: {fileID: 22590774}
   ramSplineTargetLocalY: -7.5
-  ramSplineAnimDuration: 60
+  ramSplineAnimDuration: 35
   extraObject: {fileID: 1339021850}
   extraObjectTargetY: 14.8
   firstFloorController: {fileID: 1601184948}
