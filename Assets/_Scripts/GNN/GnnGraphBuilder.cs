@@ -460,7 +460,7 @@ public sealed class GnnGraphBuilder
     /// <summary>
     /// Bir zemin noktasının etiketi. Eğitim etiketleri ve GNN hazır değilken puanlayıcının yedeği aynı kuralı kullanır:
     ///   - son su seviyesinin dangerDepth'ten fazla altı → Tehlikeli (bodrum, nehir kenarı)
-    ///   - nehir / köprü noktasına hazardPointRadius'tan yakın → Tehlikeli
+    ///   - nehir / köprü noktasına yatayda hazardPointRadius, dikeyde hazardPointVerticalRange içinde → Tehlikeli
     ///   - su seviyesinin en fazla safeHeight üstü → Dikkat (zemin kat)
     ///   - daha yüksek → Güvenli (üst kat)
     /// </summary>
@@ -472,7 +472,7 @@ public sealed class GnnGraphBuilder
         float r2 = settings.hazardPointRadius * settings.hazardPointRadius;
         foreach (Vector3 p in hazardPoints)
         {
-            if (Mathf.Abs(p.y - floor.y) > 4f) continue;
+            if (Mathf.Abs(p.y - floor.y) > settings.hazardPointVerticalRange) continue;
             if ((p.x - floor.x) * (p.x - floor.x) + (p.z - floor.z) * (p.z - floor.z) <= r2) return GnnRiskClass.Danger;
         }
 

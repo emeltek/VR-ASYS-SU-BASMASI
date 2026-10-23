@@ -45,6 +45,9 @@ public class GnnGraphSettings
     [Tooltip("Etiket: nehir / köprü noktalarına bu yatay mesafeden (m) yakın düğümler 'Tehlikeli'")]
     public float hazardPointRadius = 3f;
 
+    [Tooltip("Etiket: nehir / köprü noktası yalnızca bu dikey mesafedeki (m) katı etkiler (bodrum noktası zemin katı işaretlemesin)")]
+    public float hazardPointVerticalRange = 1.5f;
+
     [Header("Özellikler")]
     [Tooltip("Su / güvenli alan arama mesafesi (m)")]
     public float hazardProbeDistance = 30f;
