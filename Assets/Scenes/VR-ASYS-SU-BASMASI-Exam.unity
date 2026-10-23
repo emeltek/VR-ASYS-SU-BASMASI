@@ -131248,6 +131248,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   scoreText: {fileID: 3189205743155911180}
   dangerSystem: {fileID: 0}
+  switchNotDonePenalty: 30
+  switchWetPenalty: 35
+  phoneMissedPenalty: 10
+  firstAidMissedPenalty: 10
+  waterContactPenalty: 20
+  immobilityPenalty: 5
+  immobilityPenaltyCap: 15
 --- !u!1 &1255861584
 GameObject:
   m_ObjectHideFlags: 0
@@ -176867,6 +176874,111 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2038647909}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!1 &2039030327
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2039030330}
+  - component: {fileID: 2039030329}
+  - component: {fileID: 2039030328}
+  m_Layer: 0
+  m_Name: GNN
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &2039030328
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2039030327}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7e6a5aae180df4688afdcb0426f33fbf, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  riskPredictor: {fileID: 0}
+  trackedTarget: {fileID: 0}
+  dangerBudget: 60
+  dangerGraceTime: 5
+  exposureTimeConstant: 8
+  endCautionPenalty: 30
+  endDangerPenalty: 55
+  updateInterval: 0.5
+  reentryCooldown: 3
+  warningSound: {fileID: 0}
+  showDebugLogs: 1
+--- !u!114 &2039030329
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2039030327}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ddd67394b1aca45fbbaaaa6161aaa9d3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  weightsJson: {fileID: 0}
+  graphJson: {fileID: 0}
+  siteArea: {fileID: 0}
+  hazardPoints: []
+  buildingArea: {fileID: 0}
+  graphSettings:
+    cellSize: 0.5
+    siteMargin: 8
+    floodLevel: 14.8
+    dangerDepth: 0.5
+    safeHeight: 1.5
+    hazardPointRadius: 3
+    hazardVerticalRange: 2
+    riverLevel: 11
+    buildingMargin: 1
+    hazardProbeDistance: 30
+    heightScale: 5
+    overheadProbeDistance: 10
+    clearanceProbeDistance: 3
+    minLevelSeparation: 1.8
+    bodyRadius: 0.25
+    maxSlope: 45
+    maxStep: 0.5
+    waterKeywords:
+    - ramspline
+    - lake polygon
+    - lakepolygon
+    - river
+    - water
+    - nehir
+    layerMask:
+      serializedVersion: 2
+      m_Bits: 4294967295
+    gridOffset: {x: 0, y: 0}
+  drawGizmos: 1
+  gizmoShowsDecision: 1
+  showDebugLogs: 1
+--- !u!4 &2039030330
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2039030327}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &2045736806
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -323741,3 +323853,4 @@ SceneRoots:
   - {fileID: 932716331}
   - {fileID: 1459738331}
   - {fileID: 786920919}
+  - {fileID: 2039030330}
