@@ -38,6 +38,8 @@ public class GnnRiskPredictor : MonoBehaviour
     [SerializeField] private BoxCollider siteArea;
     [Tooltip("Nehir / köprü / bodrum noktaları. Boşsa KnnDangerZoneSystem bölgelerinin noktaları kullanılır.")]
     [SerializeField] private Transform[] hazardPoints;
+    [Tooltip("Ev alanı (iç mekân etiketleri). Boşsa kat (FirstFloorController) ve güvenli alan kutularının birleşimi kullanılır.")]
+    [SerializeField] private BoxCollider buildingArea;
     [SerializeField] private GnnGraphSettings graphSettings = new GnnGraphSettings();
 
     [Header("Debug")]
@@ -228,35 +230,70 @@ public class GnnRiskPredictor : MonoBehaviour
         // Tetik kutuları zaten fizik sorgularına girmez; güvenli alan kutuları kaçış hedefi olarak alınır
         var safe = SafeAreaBounds();
         List<Vector3> hazards = HazardPointPositions();
-        var builder = new GnnGraphBuilder(settings, ComputeSiteArea(settings, hazards, safe, players), hazards, safe, ignoreRoots);
+        var builder = new GnnGraphBuilder(settings, ComputeSiteArea(settings, hazards, safe, players), HazardLines(), safe, ignoreRoots);
         builder.SeedPoints.AddRange(players);
         builder.SeedPoints.AddRange(hazards);
         return builder;
     }
 
-    public List<Vector3> HazardPointPositions()
+    /// <summary>
+    /// Tehlike çizgileri: her KnnDangerZoneSystem bölgesinin noktaları Inspector'daki sırayla birleştirilir
+    /// (nehir kenarı boyunca kesintisiz şerit). Hazard Points doluysa her nokta tek başına alınır.
+    /// </summary>
+    public List<List<Vector3>> HazardLines()
     {
-        var result = new List<Vector3>();
+        var lines = new List<List<Vector3>>();
         if (hazardPoints != null)
         {
             foreach (Transform t in hazardPoints)
-                if (t != null) result.Add(t.position);
+                if (t != null) lines.Add(new List<Vector3> { t.position });
         }
+        if (lines.Count > 0) return lines;
 
-        if (result.Count == 0)
+        foreach (KnnDangerZoneSystem knn in FindObjectsOfType<KnnDangerZoneSystem>(true))
         {
-            foreach (KnnDangerZoneSystem knn in FindObjectsOfType<KnnDangerZoneSystem>(true))
+            if (knn.zones == null) continue;
+            foreach (KnnDangerZoneSystem.DangerZone zone in knn.zones)
             {
-                if (knn.zones == null) continue;
-                foreach (KnnDangerZoneSystem.DangerZone zone in knn.zones)
+                if (zone?.points == null || !zone.active) continue;
+                var line = new List<Vector3>();
+                foreach (Transform t in zone.points)
                 {
-                    if (zone?.points == null) continue;
-                    foreach (Transform t in zone.points)
-                        if (t != null && !result.Contains(t.position)) result.Add(t.position);
+                    // Aynı nokta listede iki kez olabilir (sahnede Nehir Kenarı bölgesinde var)
+                    if (t != null && (line.Count == 0 || line[line.Count - 1] != t.position)) line.Add(t.position);
                 }
+                if (line.Count > 0) lines.Add(line);
             }
         }
+        return lines;
+    }
+
+    public List<Vector3> HazardPointPositions()
+    {
+        var result = new List<Vector3>();
+        foreach (List<Vector3> line in HazardLines()) result.AddRange(line);
         return result;
+    }
+
+    /// <summary>Ev alanı: atanmış kutu ya da kat / güvenli alan / bodrum tetik kutularının birleşimi.</summary>
+    public Bounds BuildingBounds()
+    {
+        if (buildingArea != null) return WorldBounds(buildingArea);
+
+        bool any = false;
+        var b = new Bounds();
+        void Add(BoxCollider box)
+        {
+            Bounds w = WorldBounds(box);
+            if (!any) { b = w; any = true; } else b.Encapsulate(w);
+        }
+        foreach (FirstFloorController f in FindObjectsOfType<FirstFloorController>(true))
+            foreach (BoxCollider box in f.GetComponents<BoxCollider>()) Add(box);
+        foreach (SafeAreaController s in FindObjectsOfType<SafeAreaController>(true))
+            foreach (BoxCollider box in s.GetComponents<BoxCollider>()) Add(box);
+        foreach (BaseMentFloorCheck m in FindObjectsOfType<BaseMentFloorCheck>(true))
+            foreach (BoxCollider box in m.GetComponents<BoxCollider>()) Add(box);
+        return any ? b : default;
     }
 
     private static List<Bounds> SafeAreaBounds()
@@ -302,7 +339,7 @@ public class GnnRiskPredictor : MonoBehaviour
     {
         GnnGraphBuilder builder = CreateBuilder(graphSettings);
         graph = builder.BuildImmediate();
-        previewLabels = GnnGraphBuilder.ComputeLabels(graph, graphSettings, HazardPointPositions());
+        previewLabels = GnnGraphBuilder.ComputeLabels(graph, graphSettings, HazardLines(), BuildingBounds());
         probabilities = null;
         Debug.Log($"[GNN] Önizleme: {graph.NodeCount} düğüm, {graph.EdgeCount / 2} kenar, {builder.HazardPointCount} tehlike noktası, " +
                   $"{builder.DroppedNodes} ulaşılamayan düğüm atıldı.");

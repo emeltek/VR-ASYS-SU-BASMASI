@@ -42,11 +42,17 @@ public class GnnGraphSettings
     [Tooltip("Etiket: su seviyesinin en fazla bu kadar (m) üstündeki düğümler 'Dikkat'; daha yükseği 'Güvenli'")]
     public float safeHeight = 1.5f;
 
-    [Tooltip("Etiket: nehir / köprü noktalarına bu yatay mesafeden (m) yakın düğümler 'Tehlikeli'")]
+    [Tooltip("Etiket (dış mekân): nehir / köprü çizgisine (KNN bölge noktalarının sırayla birleşimi) bu yatay mesafeden (m) yakın düğümler 'Tehlikeli'")]
     public float hazardPointRadius = 3f;
 
-    [Tooltip("Etiket: nehir / köprü noktası yalnızca bu dikey mesafedeki (m) katı etkiler (bodrum noktası zemin katı işaretlemesin)")]
-    public float hazardPointVerticalRange = 1.5f;
+    [Tooltip("Etiket: nehir / köprü çizgisi yalnızca bu dikey mesafedeki (m) zemini etkiler (bodrum noktası avluyu işaretlemesin)")]
+    public float hazardVerticalRange = 2f;
+
+    [Tooltip("Dış mekânda bu yüksekliğin (dünya Y, m) altındaki zemin nehir yatağı sayılır; yatağın Hazard Point Radius çevresi nehir kenarıdır")]
+    public float riverLevel = 11f;
+
+    [Tooltip("Ev alanı (kat / güvenli alan kutularının birleşimi) yatayda bu kadar (m) genişletilir")]
+    public float buildingMargin = 1f;
 
     [Header("Özellikler")]
     [Tooltip("Su / güvenli alan arama mesafesi (m)")]

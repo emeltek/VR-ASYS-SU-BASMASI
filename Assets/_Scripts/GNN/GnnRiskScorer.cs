@@ -13,7 +13,7 @@ using UnityEngine;
 ///    Tolerans süresi toplamdır (çıkıp girmek sıfırlamaz). "Dikkat" alanı yalnızca uyarıdır.
 ///
 /// 2) Senaryo sonunda (ScoreManager.ShowFinalScore) oyuncunun konumu: Dikkat −30 (zemin kat),
-///    Tehlikeli −55 (bodrum / dışarısı). GNN hazır değilse aynı sınıflar GnnGraphBuilder.LabelAt
+///    Tehlikeli −55 (bodrum / nehir kenarı / köprü). GNN hazır değilse aynı sınıflar GnnGraphBuilder.LabelAt
 ///    kuralıyla (su derinliği + nehir / köprü noktaları) bulunur.
 /// </summary>
 public class GnnRiskScorer : MonoBehaviour
@@ -172,10 +172,12 @@ public class GnnRiskScorer : MonoBehaviour
 
         // Yedek: başın altındaki zemini tahmin edip aynı etiket kuralını uygula
         GnnGraphSettings settings = predictor != null ? predictor.GraphSettings : new GnnGraphSettings();
-        var hazards = predictor != null ? predictor.HazardPointPositions() : new System.Collections.Generic.List<Vector3>();
+        var hazards = predictor != null ? predictor.HazardLines() : new System.Collections.Generic.List<System.Collections.Generic.List<Vector3>>();
         Vector3 floor = position + Vector3.down * 1.5f;
-        source = $"kural, zemin y={floor.y:F1}";
-        return GnnGraphBuilder.LabelAt(floor, settings, hazards);
+        bool indoor = predictor != null && GnnGraphBuilder.InBuilding(floor, predictor.BuildingBounds(), settings);
+        bool nearRiver = !indoor && floor.y < settings.riverLevel + settings.hazardVerticalRange;
+        source = $"kural, zemin y={floor.y:F1}, {(indoor ? "iç" : "dış")} mekân";
+        return GnnGraphBuilder.LabelAt(floor, indoor, nearRiver, settings, hazards);
     }
 
     private static bool IsFloodActive() => WaterRiseEffect.isRainStarted && !ScoreManager.IsFinalized;

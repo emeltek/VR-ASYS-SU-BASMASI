@@ -46,7 +46,7 @@ public sealed class GnnGraphBuilder
 
     private readonly GnnGraphSettings settings;
     private readonly HashSet<Collider> ignored = new HashSet<Collider>();
-    private readonly List<Vector3> hazardPoints;
+    private readonly List<List<Vector3>> hazardLines;
     private readonly List<Bounds> safeAreas;
     private readonly RaycastHit[] hitBuffer = new RaycastHit[128];
     private readonly Collider[] colliderBuffer = new Collider[512];
@@ -56,20 +56,21 @@ public sealed class GnnGraphBuilder
 
     public GnnGraph Graph { get; } = new GnnGraph();
     public bool HasArea { get; }
-    public int HazardPointCount => hazardPoints.Count;
+    public int HazardPointCount { get; }
     public int SafeAreaCount => safeAreas.Count;
     public int IgnoredWaterColliders { get; }
     public Bounds Area => area;
 
     /// <param name="siteArea">Grafın kurulacağı alan (dünya, yükseklik dahil). Boyutu sıfırsa graf kurulmaz.</param>
-    /// <param name="hazardPoints">Nehir / köprü / bodrum noktaları (KnnDangerZoneSystem bölgeleri)</param>
+    /// <param name="hazardLines">Nehir / köprü / bodrum çizgileri (her KnnDangerZoneSystem bölgesinin noktaları sırayla)</param>
     /// <param name="safeAreas">Güvenli alan kutuları (SafeAreaController)</param>
     /// <param name="ignoreRoots">Collider'ları yok sayılacak objeler (oyuncu, tetik kutuları)</param>
-    public GnnGraphBuilder(GnnGraphSettings settings, Bounds siteArea, List<Vector3> hazardPoints, List<Bounds> safeAreas,
+    public GnnGraphBuilder(GnnGraphSettings settings, Bounds siteArea, List<List<Vector3>> hazardLines, List<Bounds> safeAreas,
         IEnumerable<Transform> ignoreRoots)
     {
         this.settings = settings;
-        this.hazardPoints = hazardPoints;
+        this.hazardLines = hazardLines;
+        foreach (List<Vector3> line in hazardLines) HazardPointCount += line.Count;
         this.safeAreas = safeAreas;
         area = siteArea;
         HasArea = siteArea.size.x > 0f && siteArea.size.z > 0f;
@@ -323,10 +324,8 @@ public sealed class GnnGraphBuilder
         // 0: Su seviyesine göre yükseklik
         float rel = Mathf.Clamp((fp.y - settings.floodLevel) / settings.heightScale, -1f, 1f);
 
-        // 1: Nehir / köprü noktalarına yatay uzaklık
-        float water = probe;
-        foreach (Vector3 p in hazardPoints)
-            water = Mathf.Min(water, new Vector2(p.x - fp.x, p.z - fp.z).magnitude);
+        // 1: Nehir / köprü çizgisine yatay uzaklık
+        float water = Mathf.Min(probe, HazardDistance(fp, hazardLines, float.PositiveInfinity));
 
         // 3: Tavan
         float upLength = settings.overheadProbeDistance;
@@ -458,32 +457,90 @@ public sealed class GnnGraphBuilder
     }
 
     /// <summary>
-    /// Bir zemin noktasının etiketi. Eğitim etiketleri ve GNN hazır değilken puanlayıcının yedeği aynı kuralı kullanır:
-    ///   - son su seviyesinin dangerDepth'ten fazla altı → Tehlikeli (bodrum, nehir kenarı)
-    ///   - nehir / köprü noktasına yatayda hazardPointRadius, dikeyde hazardPointVerticalRange içinde → Tehlikeli
-    ///   - su seviyesinin en fazla safeHeight üstü → Dikkat (zemin kat)
-    ///   - daha yüksek → Güvenli (üst kat)
+    /// Noktanın tehlike çizgilerine yatay uzaklığı. Her bölgenin noktaları sırayla birleştirilir (tek noktalı
+    /// bölge nokta olarak kalır). Çizginin o noktadaki yüksekliği zeminden verticalRange'ten fazla farklıysa sayılmaz.
     /// </summary>
-    public static GnnRiskClass LabelAt(Vector3 floor, GnnGraphSettings settings, List<Vector3> hazardPoints)
+    public static float HazardDistance(Vector3 p, List<List<Vector3>> lines, float verticalRange)
     {
-        float depth = settings.floodLevel - floor.y;
-        if (depth > settings.dangerDepth) return GnnRiskClass.Danger;
-
-        float r2 = settings.hazardPointRadius * settings.hazardPointRadius;
-        foreach (Vector3 p in hazardPoints)
+        float best = float.PositiveInfinity;
+        var q = new Vector2(p.x, p.z);
+        foreach (List<Vector3> line in lines)
         {
-            if (Mathf.Abs(p.y - floor.y) > settings.hazardPointVerticalRange) continue;
-            if ((p.x - floor.x) * (p.x - floor.x) + (p.z - floor.z) * (p.z - floor.z) <= r2) return GnnRiskClass.Danger;
+            if (line == null || line.Count == 0) continue;
+            int segments = Mathf.Max(1, line.Count - 1);
+            for (int i = 0; i < segments; i++)
+            {
+                Vector3 a = line[i], b = line[Mathf.Min(i + 1, line.Count - 1)];
+                var a2 = new Vector2(a.x, a.z);
+                Vector2 ab = new Vector2(b.x, b.z) - a2;
+                float t = ab.sqrMagnitude > 1e-6f ? Mathf.Clamp01(Vector2.Dot(q - a2, ab) / ab.sqrMagnitude) : 0f;
+                float y = Mathf.Lerp(a.y, b.y, t);
+                if (Mathf.Abs(y - p.y) > verticalRange) continue;
+                best = Mathf.Min(best, (q - (a2 + ab * t)).magnitude);
+            }
         }
-
-        return -depth <= settings.safeHeight ? GnnRiskClass.Caution : GnnRiskClass.Safe;
+        return best;
     }
 
-    public static int[] ComputeLabels(GnnGraph graph, GnnGraphSettings settings, List<Vector3> hazardPoints)
+    /// <summary>
+    /// Bir zemin noktasının etiketi. Eğitim etiketleri ve GNN hazır değilken puanlayıcının yedeği aynı kuralı kullanır.
+    ///
+    /// İç mekân (ev alanı): son su seviyesinin dangerDepth'ten fazla altı → Tehlikeli (bodrum),
+    ///                      en fazla safeHeight üstü → Dikkat (zemin kat, giriş), daha yükseği → Güvenli (üst kat).
+    /// Dış mekân:           nehir yatağı / kenarı ya da köprü çizgisine hazardPointRadius'tan yakın → Tehlikeli,
+    ///                      kalanı → Dikkat (sel sırasında dışarısı güvenli sayılmaz).
+    /// nearRiver: nokta nehir yatağına (riverLevel altındaki dış zemin) hazardPointRadius'tan yakın mı.
+    /// </summary>
+    public static GnnRiskClass LabelAt(Vector3 floor, bool indoor, bool nearRiver, GnnGraphSettings settings, List<List<Vector3>> hazardLines)
     {
-        var labels = new int[graph.NodeCount];
-        for (int i = 0; i < graph.NodeCount; i++)
-            labels[i] = (int)LabelAt(graph.Positions[i], settings, hazardPoints);
+        if (indoor)
+        {
+            float depth = settings.floodLevel - floor.y;
+            if (depth > settings.dangerDepth) return GnnRiskClass.Danger;
+            return -depth <= settings.safeHeight ? GnnRiskClass.Caution : GnnRiskClass.Safe;
+        }
+
+        if (nearRiver) return GnnRiskClass.Danger;
+        return HazardDistance(floor, hazardLines, settings.hazardVerticalRange) <= settings.hazardPointRadius
+            ? GnnRiskClass.Danger
+            : GnnRiskClass.Caution;
+    }
+
+    /// <summary>Nokta ev alanında mı (yatay; kutuların birleşimi buildingMargin kadar genişletilmiş).</summary>
+    public static bool InBuilding(Vector3 p, Bounds building, GnnGraphSettings settings)
+    {
+        if (building.size == Vector3.zero) return false;
+        float m = settings.buildingMargin;
+        return p.x >= building.min.x - m && p.x <= building.max.x + m && p.z >= building.min.z - m && p.z <= building.max.z + m;
+    }
+
+    public static int[] ComputeLabels(GnnGraph graph, GnnGraphSettings settings, List<List<Vector3>> hazardLines, Bounds building)
+    {
+        int n = graph.NodeCount;
+        var indoor = new bool[n];
+        for (int i = 0; i < n; i++) indoor[i] = InBuilding(graph.Positions[i], building, settings);
+
+        // Nehir yatağı: ev dışında riverLevel altındaki düğümler; hücre tablosuyla çevresi aranır
+        float r = settings.hazardPointRadius;
+        int reach = Mathf.CeilToInt(r / graph.CellSize);
+        var bed = new HashSet<Vector2Int>();
+        for (int i = 0; i < n; i++)
+            if (!indoor[i] && graph.Positions[i].y < settings.riverLevel) bed.Add(graph.Cells[i]);
+
+        var labels = new int[n];
+        for (int i = 0; i < n; i++)
+        {
+            bool nearRiver = false;
+            if (!indoor[i] && graph.Positions[i].y < settings.riverLevel + settings.hazardVerticalRange)
+            {
+                Vector2Int c = graph.Cells[i];
+                for (int dx = -reach; dx <= reach && !nearRiver; dx++)
+                    for (int dz = -reach; dz <= reach && !nearRiver; dz++)
+                        if ((dx * dx + dz * dz) * graph.CellSize * graph.CellSize <= r * r && bed.Contains(new Vector2Int(c.x + dx, c.y + dz)))
+                            nearRiver = true;
+            }
+            labels[i] = (int)LabelAt(graph.Positions[i], indoor[i], nearRiver, settings, hazardLines);
+        }
         return labels;
     }
 }

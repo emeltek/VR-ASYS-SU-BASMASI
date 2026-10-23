@@ -5,13 +5,16 @@ Ev ve çevresi 0.5 m hücrelere bölünür. Aynı (x, z) hücresinde her yürün
 üst kat, arazi) ayrı düğümdür; katlar merdivenle bağlanır. Çatı / dolap üstü gibi ulaşılamayan adacıklar atılır.
 Su yüzeyleri (RamSpline, Lake Polygon, `Water` etiketi) zemin ve engel sayılmaz.
 
-Etiketler (yalnızca eğitimde, `GnnGraphBuilder.LabelAt`), son su seviyesine (`Flood Level`, varsayılan 14.8 m) göre:
+Etiketler (yalnızca eğitimde, `GnnGraphBuilder.ComputeLabels`):
 
-| Sınıf | Kural |
-|---|---|
-| Tehlikeli | Su seviyesinin 0.5 m'den fazla altı (bodrum, nehir kenarı) **veya** KNN nehir / köprü noktalarına ≤ 3 m |
-| Dikkat | Su seviyesinin en fazla 1.5 m üstü (zemin kat, evin önü) |
-| Güvenli | Daha yüksek (üst kat, güvenli alan) |
+| Yer | Kural | Sınıf |
+|---|---|---|
+| Ev içi (kat / güvenli alan kutularının birleşimi + 1 m) | Son su seviyesinin (`Flood Level`, 14.8 m) 0.5 m'den fazla altı | Tehlikeli (bodrum) |
+| | Su seviyesinin en fazla 1.5 m üstü | Dikkat (zemin kat, giriş) |
+| | Daha yüksek | Güvenli (üst kat) |
+| Dışarısı | Nehir yatağı (`River Level` 11.0 m altındaki zemin) ve 3 m çevresi | Tehlikeli (nehir kenarı) |
+| | KNN köprü / nehir çizgisine ≤ 3 m | Tehlikeli (köprü) |
+| | Kalanı (evin önü, arkası, arazi) | Dikkat |
 
 Özellikler (8): `relative_height`, `water_distance`, `safe_path_distance` (merdivenlerle güvenli alana yürüme),
 `overhead_clearance`, `min_clearance`, `mean_clearance`, `openness`, `levels_in_column`.

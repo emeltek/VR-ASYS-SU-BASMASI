@@ -8,7 +8,7 @@ using UnityEngine;
 /// Açık sahneden GNN verisini üretir:
 ///   - GNN/data/&lt;sahne&gt;_graph_{0..3}.json : etiketli eğitim grafları (grid yarım hücre kaydırılarak 4 kopya)
 ///   - Assets/Resources/GNN/gnn_graph_&lt;sahne&gt;.json : oyunda kullanılan graf (runtime sahne taramaz)
-/// Etiketler son su seviyesine göre su derinliğinden ve KNN nehir / köprü noktalarından gelir (GnnGraphBuilder.LabelAt).
+/// Etiketler GnnGraphBuilder.ComputeLabels'tan gelir: evde su derinliği, dışarıda nehir yatağı / kenarı ve köprü.
 /// </summary>
 public static class GnnDatasetExporter
 {
@@ -57,7 +57,11 @@ public static class GnnDatasetExporter
             foreach (string old in Directory.GetFiles(DataDirectory, fileStem + "_graph_*.json")) File.Delete(old);
 
             var log = new System.Text.StringBuilder();
-            List<Vector3> hazards = predictor.HazardPointPositions();
+            List<List<Vector3>> hazards = predictor.HazardLines();
+            Bounds building = predictor.BuildingBounds();
+            if (building.size == Vector3.zero)
+                return "Ev alanı bulunamadı (FirstFloorController / SafeAreaController kutusu ya da GnnRiskPredictor > Building Area).";
+            log.AppendLine($"Ev alanı: x {building.min.x:F1}–{building.max.x:F1}, z {building.min.z:F1}–{building.max.z:F1}");
 
             for (int k = 0; k < GridOffsets.Length; k++)
             {
@@ -79,7 +83,7 @@ public static class GnnDatasetExporter
                 }
 
                 GnnGraph graph = builder.BuildImmediate();
-                graph.Labels = GnnGraphBuilder.ComputeLabels(graph, settings, hazards);
+                graph.Labels = GnnGraphBuilder.ComputeLabels(graph, settings, hazards, building);
                 GnnGraphExport export = graph.ToExport(sceneName, GnnGraphBuilder.FeatureNames, GnnGraphBuilder.ClassNames);
                 string json = JsonUtility.ToJson(export);
 
