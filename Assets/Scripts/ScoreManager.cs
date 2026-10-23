@@ -68,6 +68,7 @@ public class ScoreManager : MonoBehaviour
     {
         ResetState();
         Instance = this;
+        if (scoreText != null) scoreText.text = ""; // sahnedeki geçici yazı ("puıan") görünmesin
     }
 
     /// <summary>Puanı düşürür (amount pozitif). Senaryo bittiyse etkisizdir.</summary>

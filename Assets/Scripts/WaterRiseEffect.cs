@@ -59,6 +59,9 @@ public class WaterRiseEffect : MonoBehaviour
     private void Start()
     {
         secondUI.SetActive(false);
+
+        // Puan paneli (ScoreMesaj) sahnede açık başlıyor; yalnızca senaryo sonunda gösterilir
+        if (isExamScene && scoreUI != null) scoreUI.SetActive(false);
         if (waterTransforms == null || waterTransforms.Length == 0)
         {
             Debug.LogError("Water Transform'ları atanmamış!");
